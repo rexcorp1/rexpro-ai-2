@@ -46,6 +46,7 @@ interface SidebarProps {
   setUseUrlContext: (enabled: boolean) => void;
   urlContext: string;
   setUrlContext: (url: string) => void;
+  isMobile: boolean;
 }
 
 const Dropdown: React.FC<{
@@ -227,6 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setUseUrlContext,
   urlContext,
   setUrlContext,
+  isMobile,
 }) => {
   const mediaResolutionOptions = [
     { value: MediaResolution.DEFAULT, label: 'Default' },
@@ -243,9 +245,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className={`
-      bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg flex-shrink-0
-      transition-all duration-300 ease-in-out overflow-hidden
-      ${isSidebarOpen ? 'w-[320px] border ml-4' : 'w-0 border-none'}
+      bg-white dark:bg-gray-900 flex-shrink-0 overflow-hidden
+      ${ isMobile
+        ? `fixed inset-y-0 right-0 z-30 w-[320px] border-l border-gray-200 dark:border-gray-700 shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`
+        : `border-gray-200 dark:border-gray-700 rounded-lg transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-[320px] border ml-4' : 'w-0 border-none'}`
+      }
     `}>
       <div className={`
         p-4 w-[320px] transition-opacity duration-150 ease-in-out overflow-y-auto h-full hover-scrollbar [scrollbar-gutter:stable]

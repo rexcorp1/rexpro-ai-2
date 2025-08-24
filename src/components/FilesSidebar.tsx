@@ -12,6 +12,7 @@ interface FilesSidebarProps {
   onStartTuning: (config: Omit<TunedModel, 'id' | 'status'>) => void;
   onUpdateTuning: (model: TunedModel) => void;
   modelOptions: { value: Model; label: string }[];
+  isMobile: boolean;
 }
 
 type ActiveTab = 'files' | 'tuning';
@@ -77,7 +78,7 @@ const LocalDropdown: React.FC<{
 };
 
 
-export const FilesSidebar: React.FC<FilesSidebarProps> = ({ isSidebarOpen, messages, onDeleteAttachment, chatHistory, tunedModels, onStartTuning, onUpdateTuning, modelOptions }) => {
+export const FilesSidebar: React.FC<FilesSidebarProps> = ({ isSidebarOpen, messages, onDeleteAttachment, chatHistory, tunedModels, onStartTuning, onUpdateTuning, modelOptions, isMobile }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('tuning');
 
   const TabButton = ({ tabId, children }: { tabId: ActiveTab; children: React.ReactNode }) => (
@@ -316,7 +317,7 @@ export const FilesSidebar: React.FC<FilesSidebarProps> = ({ isSidebarOpen, messa
     );
   };
   
-const TuningTabContent: React.FC<Omit<FilesSidebarProps, 'isSidebarOpen' | 'messages' | 'onDeleteAttachment'>> = ({
+const TuningTabContent: React.FC<Omit<FilesSidebarProps, 'isSidebarOpen' | 'messages' | 'onDeleteAttachment' | 'isMobile'>> = ({
     chatHistory,
     tunedModels,
     onStartTuning,
@@ -699,9 +700,11 @@ const TuningTabContent: React.FC<Omit<FilesSidebarProps, 'isSidebarOpen' | 'mess
 
   return (
     <aside className={`
-      bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 rounded-lg flex-shrink-0
-      transition-all duration-300 ease-in-out overflow-hidden
-      ${isSidebarOpen ? 'w-[320px] border ml-4' : 'w-0 border-none'}
+      bg-white dark:bg-gray-900 flex-shrink-0 overflow-hidden
+      ${ isMobile
+        ? `fixed inset-y-0 right-0 z-30 w-[320px] border-l border-gray-200 dark:border-gray-700 shadow-lg transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`
+        : `border-gray-200 dark:border-gray-700 rounded-lg transition-all duration-300 ease-in-out ${isSidebarOpen ? 'w-[320px] border ml-4' : 'w-0 border-none'}`
+      }
     `}>
       <div className={`
         p-4 w-[320px] transition-opacity duration-150 ease-in-out overflow-y-auto h-full hover-scrollbar [scrollbar-gutter:stable]

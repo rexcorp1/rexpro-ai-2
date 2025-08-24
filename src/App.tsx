@@ -1,20 +1,29 @@
 
 
-
-import logo from './assets/logo.svg';
-
-
-
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatArea } from './components/ChatArea';
 import { Model, ChatMessage, Role, MediaResolution, Attachment, ChatSession, TunedModel, TuningStatus, TrainingFile } from './types';
 import { streamChatResponse, countTokens } from './services/geminiService';
-import { Plus, PanelLeft, Settings, Settings2, Trash2, PanelRight } from 'lucide-react';
+import { Plus, PanelLeft, Settings, Settings2, Trash2 } from 'lucide-react';
 import { HeaderModelSelector } from './components/HeaderModelSelector';
 import { Modal } from './components/Modal';
 import { GenerateContentResponse, Type } from '@google/genai';
 import { FilesSidebar } from './components/FilesSidebar';
+
+const useMediaQuery = (query: string) => {
+    const [matches, setMatches] = React.useState(() => window.matchMedia(query).matches);
+
+    React.useEffect(() => {
+        const mediaQuery = window.matchMedia(query);
+        const handler = (event: MediaQueryListEvent) => setMatches(event.matches);
+        mediaQuery.addEventListener('change', handler);
+        return () => mediaQuery.removeEventListener('change', handler);
+    }, [query]);
+
+    return matches;
+};
+
 
 const NavigationSidebar: React.FC<{
   isSidebarOpen: boolean;
@@ -23,28 +32,36 @@ const NavigationSidebar: React.FC<{
   activeChatId: string | null;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
-}> = ({ isSidebarOpen, onNewChat, chatHistory, activeChatId, onSelectChat, onDeleteChat }) => {
+  isMobile: boolean;
+}> = ({ isSidebarOpen, onNewChat, chatHistory, activeChatId, onSelectChat, onDeleteChat, isMobile }) => {
+  const isActuallyOpen = isMobile ? true : isSidebarOpen;
+  
   return (
     <aside
       className={`
         bg-white dark:bg-gray-900 flex flex-col p-4
         transition-all duration-300 ease-in-out flex-shrink-0
-        ${isSidebarOpen ? 'w-[260px]' : 'w-20'}
+        ${ isMobile
+            ? `fixed inset-y-0 left-0 z-30 w-[260px] shadow-lg ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : `${isSidebarOpen ? 'w-[260px]' : 'w-20'}`
+        }
       `}
     >
-      <div className="flex items-center gap-2 mb-6 px-1 flex-shrink-0 overflow-hidden">
-          <img src={logo} alt="REXPro AI Logo" className="w-8 h-8 flex-shrink-0" />
-          <h1 className={`text-lg font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>REXPro AI</h1>
+      <div className={`flex items-center gap-2 mb-6 px-1 flex-shrink-0 overflow-hidden ${isMobile ? 'hidden' : ''}`}>
+          <div className="w-8 h-8 bg-black rounded-md flex items-center justify-center flex-shrink-0">
+              <span className="font-bold text-white text-xl">R</span>
+          </div>
+          <h1 className={`text-lg font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap transition-opacity duration-200 ${isActuallyOpen ? 'opacity-100' : 'opacity-0'}`}>REXPro AI</h1>
       </div>
       <button
         onClick={onNewChat}
-        className="flex items-center w-[85%] px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
+        className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
       >
         <Plus className="w-4 h-4 flex-shrink-0" />
-        <span className={`ml-2 whitespace-nowrap overflow-hidden transition-all duration-200 ${isSidebarOpen ? 'w-auto opacity-100' : 'w-0 opacity-0'}`}>New Chat</span>
+        <span className={`ml-2 whitespace-nowrap overflow-hidden transition-all duration-200 ${isActuallyOpen ? 'w-auto opacity-100' : 'w-0 opacity-0'}`}>New Chat</span>
       </button>
 
-      <div className={`mt-6 flex-1 overflow-y-auto overflow-x-hidden transition-opacity duration-200 hover-scrollbar [scrollbar-gutter:stable] ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`mt-6 flex-1 overflow-y-auto overflow-x-hidden transition-opacity duration-200 hover-scrollbar [scrollbar-gutter:stable] ${isActuallyOpen ? 'opacity-100' : 'opacity-0'}`}>
         <h2 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-3">HISTORY</h2>
         <nav className="space-y-1">
           {chatHistory.map((chat) => (
@@ -69,7 +86,7 @@ const NavigationSidebar: React.FC<{
         </nav>
       </div>
 
-      <div className={`mt-auto flex-shrink-0 whitespace-nowrap overflow-hidden transition-opacity duration-200 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`mt-auto flex-shrink-0 whitespace-nowrap overflow-hidden transition-opacity duration-200 ${isActuallyOpen ? 'opacity-100' : 'opacity-0'}`}>
         <p className="text-sm text-gray-500 dark:text-gray-400">Signed in as <span className="font-bold text-gray-800 dark:text-gray-100">omniverse1</span></p>
       </div>
     </aside>
@@ -91,6 +108,7 @@ const dataUrlToText = (dataUrl: string): string => {
 
 
 const App: React.FC = () => {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [selectedModel, setSelectedModel] = useState<Model>(Model.GEMINI_2_5_FLASH);
   const [chatHistory, setChatHistory] = useState<ChatSession[]>(() => {
     try {
@@ -221,21 +239,6 @@ const App: React.FC = () => {
   }, []); // Run only once on mount to initialize/validate state.
   
   useEffect(() => {
-    // This effect cleans up empty chats that are not currently active.
-    // This prevents the chat history from being cluttered with "New Chat"
-    // sessions where no messages were ever sent.
-    const hasInactiveEmptyChat = chatHistory.some(
-      (chat) => chat.messages.length === 0 && chat.id !== activeChatId
-    );
-
-    if (hasInactiveEmptyChat) {
-      setChatHistory((prev) =>
-        prev.filter((chat) => chat.messages.length > 0 || chat.id === activeChatId)
-      );
-    }
-  }, [activeChatId, chatHistory]);
-
-  useEffect(() => {
     try {
         const savedModels = localStorage.getItem('tunedModels');
         if (savedModels) {
@@ -252,13 +255,23 @@ const App: React.FC = () => {
 
   useEffect(() => {
     // When the model changes, cap the thinking budget to the new model's max.
-    const maxBudgetForModel = {
+    const modelMaxBudgets: Record<Model, number> = {
       [Model.GEMINI_2_5_PRO]: 32768,
       [Model.GEMINI_2_5_FLASH]: 24576,
       [Model.GEMINI_2_5_FLASH_LITE]: 24576,
-    }[selectedModel as keyof typeof maxBudgetForModel];
+      [Model.GEMINI_2_0_FLASH]: 0,
+      [Model.GEMINI_2_0_FLASH_PREVIEW_IMAGE_GENERATION]: 0,
+      [Model.GEMINI_2_0_FLASH_LITE]: 0,
+      [Model.GEMMA_3N_E2B]: 0,
+      [Model.GEMMA_3N_E4B]: 0,
+      [Model.GEMMA_3_1B]: 0,
+      [Model.GEMMA_3_4B]: 0,
+      [Model.GEMMA_3_12B]: 0,
+      [Model.GEMMA_3_27B]: 0
+    };
+    const maxBudgetForModel = modelMaxBudgets[selectedModel];
 
-    if (maxBudgetForModel !== undefined && thinkingBudget > maxBudgetForModel) {
+    if (maxBudgetForModel && thinkingBudget > maxBudgetForModel) {
       setThinkingBudget(maxBudgetForModel);
     }
   }, [selectedModel, thinkingBudget]);
@@ -614,7 +627,10 @@ const App: React.FC = () => {
 
   const handleSelectChat = useCallback((id: string) => {
     setActiveChatId(id);
-  }, []);
+    if(isMobile) {
+        setIsNavSidebarOpen(false);
+    }
+  }, [isMobile]);
   
   const handleDeleteChat = useCallback((idToDelete: string) => {
     const currentActiveId = activeChatId;
@@ -687,22 +703,35 @@ const App: React.FC = () => {
 
 
   const toggleNavSidebar = useCallback(() => {
-    setIsNavSidebarOpen(prev => !prev);
-  }, []);
-
-  const toggleRightSidebar = useCallback(() => {
-    setIsRightSidebarOpen(prev => !prev);
-    if (!isRightSidebarOpen) { // If opening this one, close the other.
+    if (!isNavSidebarOpen && isMobile) {
+        setIsRightSidebarOpen(false);
         setIsFilesSidebarOpen(false);
     }
-  }, [isRightSidebarOpen]);
+    setIsNavSidebarOpen(prev => !prev);
+  }, [isMobile, isNavSidebarOpen]);
+
+  const toggleRightSidebar = useCallback(() => {
+    if (!isRightSidebarOpen && isMobile) {
+        setIsNavSidebarOpen(false);
+        setIsFilesSidebarOpen(false);
+    }
+    setIsRightSidebarOpen(prev => !prev);
+  }, [isMobile, isRightSidebarOpen]);
 
   const toggleFilesSidebar = useCallback(() => {
-    setIsFilesSidebarOpen(prev => !prev);
-    if (!isFilesSidebarOpen) { // If opening this one, close the other.
+    if (!isFilesSidebarOpen && isMobile) {
+        setIsNavSidebarOpen(false);
         setIsRightSidebarOpen(false);
     }
-  }, [isFilesSidebarOpen]);
+    setIsFilesSidebarOpen(prev => !prev);
+  }, [isMobile, isFilesSidebarOpen]);
+  
+  const closeAllSidebars = () => {
+    setIsNavSidebarOpen(false);
+    setIsRightSidebarOpen(false);
+    setIsFilesSidebarOpen(false);
+  };
+
 
   const openSchemaModal = () => {
     setTempSchema(structuredOutputSchema || placeholderSchema);
@@ -738,6 +767,12 @@ const App: React.FC = () => {
 
   return (
     <div className="h-screen font-sans bg-white dark:bg-gray-950 text-gray-800 dark:text-gray-200 flex">
+        {isMobile && (isNavSidebarOpen || isRightSidebarOpen || isFilesSidebarOpen) && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-20"
+            onClick={closeAllSidebars}
+          />
+        )}
         <NavigationSidebar
           isSidebarOpen={isNavSidebarOpen}
           onNewChat={handleNewChat}
@@ -745,15 +780,16 @@ const App: React.FC = () => {
           activeChatId={activeChatId}
           onSelectChat={handleSelectChat}
           onDeleteChat={handleDeleteChat}
+          isMobile={isMobile}
         />
         
-        <div className="flex-1 flex flex-col min-w-0 p-4">
-            <header className="flex items-center justify-between pb-4 flex-shrink-0">
+        <div className="flex-1 flex flex-col min-w-0 md:p-4">
+            <header className="flex items-center justify-between pb-4 flex-shrink-0 max-md:p-2 max-md:pb-2 border-b md:border-none dark:border-gray-800">
                 <div className="flex items-center gap-4 min-w-0">
                     <button onClick={toggleNavSidebar} className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
-                        {isNavSidebarOpen ? <PanelRight className="h-6 w-6" /> : <PanelLeft className="h-6 w-6" />}
+                        <PanelLeft className="h-6 w-6" />
                     </button>
-                    <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-200 truncate" title={activeChat?.title}>
+                    <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-200 truncate hidden md:block" title={activeChat?.title}>
                       {activeChat?.title || 'New Chat'}
                     </h1>
                 </div>
@@ -762,6 +798,7 @@ const App: React.FC = () => {
                       selectedModel={selectedModel}
                       setSelectedModel={setSelectedModel}
                       modelOptions={combinedModelOptions}
+                      isMobile={isMobile}
                     />
                     <button onClick={toggleFilesSidebar} className="text-gray-500 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800">
                         <Settings2 className="h-5 w-5" />
@@ -773,7 +810,7 @@ const App: React.FC = () => {
             </header>
 
             <div className="flex-1 flex min-h-0">
-                <main className="flex-1 flex flex-col min-w-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <main className="flex-1 flex flex-col min-w-0 bg-white dark:bg-gray-900 md:border border-gray-200 dark:border-gray-700 md:rounded-lg overflow-hidden">
                     <ChatArea
                         messages={messages}
                         onSendMessage={handleSendMessage}
@@ -820,6 +857,7 @@ const App: React.FC = () => {
                     setUseUrlContext={setUseUrlContext}
                     urlContext={urlContext}
                     setUrlContext={setUrlContext}
+                    isMobile={isMobile}
                 />
                 <FilesSidebar 
                     isSidebarOpen={isFilesSidebarOpen} 
@@ -830,6 +868,7 @@ const App: React.FC = () => {
                     onStartTuning={handleStartTuning}
                     onUpdateTuning={handleUpdateTuning}
                     modelOptions={modelOptions}
+                    isMobile={isMobile}
                 />
             </div>
         </div>
