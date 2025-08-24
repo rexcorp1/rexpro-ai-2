@@ -1,12 +1,9 @@
-// This file is used for TypeScript type declarations.
+/// <reference types="vite/client" />
 
-declare var process: {
-  env: {
-    API_KEY: string;
-  }
+interface ImportMetaEnv {
+  readonly VITE_API_KEY: string;
 }
 
-declare module '*.svg' {
-  const content: string;
-  export default content;
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }

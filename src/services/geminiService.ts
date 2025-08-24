@@ -67,7 +67,7 @@ export async function countTokens(messages: ChatMessage[], modelName: Model): Pr
       contents: contents,
     });
 
-    return response.totalTokens;
+    return response.totalTokens || 0;
   } catch (error) {
     console.error("Error counting tokens:", error);
     return 0;
@@ -93,33 +93,33 @@ export async function streamChatResponse(
         },
     };
     
-    if (isImageGenModel && params.config) {
-      params.config.responseModalities = ['IMAGE', 'TEXT'];
-    }
+    if (params.config) {
+        if (isImageGenModel) {
+            params.config.responseModalities = ['IMAGE', 'TEXT'];
+        }
 
-    // Gemma and Image Gen models do not support system instructions.
-    if (!isGemmaModel && !isImageGenModel) {
-        const finalSystemInstruction = (options.systemInstruction && options.systemInstruction.trim() !== '')
-            ? options.systemInstruction
-            : DEFAULT_SYSTEM_INSTRUCTION;
-        if (params.config) {
+        // Gemma and Image Gen models do not support system instructions.
+        if (!isGemmaModel && !isImageGenModel) {
+            const finalSystemInstruction = (options.systemInstruction && options.systemInstruction.trim() !== '')
+                ? options.systemInstruction
+                : DEFAULT_SYSTEM_INSTRUCTION;
             params.config.systemInstruction = finalSystemInstruction;
         }
-    }
 
-    // Clean up undefined properties to avoid sending them in the API call
-    if (params.config) {
-        Object.keys(params.config).forEach(key => {
-            const configKey = key as keyof typeof params.config;
-            if (params.config[configKey] === undefined) {
-                delete params.config[configKey];
+        // Clean up undefined properties to avoid sending them in the API call
+        // params.config is guaranteed to be defined here due to the if (params.config) check
+        if (params.config) {
+            Object.keys(params.config).forEach(key => {
+                const configKey = key as keyof typeof params.config;
+                if (params.config && params.config[configKey] === undefined) {
+                    delete params.config[configKey];
+                }
+            });
+            if (params.config.tools && params.config.tools.length === 0) {
+                delete params.config.tools;
             }
-        });
-        if (params.config.tools && params.config.tools.length === 0) {
-            delete params.config.tools;
         }
     }
-
 
     const response = await ai.models.generateContentStream(params);
 
