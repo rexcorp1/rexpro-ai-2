@@ -5,3 +5,8 @@ declare var process: {
     API_KEY: string;
   }
 }
+
+declare module '*.svg' {
+  const content: string;
+  export default content;
+}
