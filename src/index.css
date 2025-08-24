@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+.dot-1 {
+  animation: bounce 1.4s infinite ease-in-out both;
+  animation-delay: -0.32s;
+}
+.dot-2 {
+  animation: bounce 1.4s infinite ease-in-out both;
+  animation-delay: -0.16s;
+}
+.dot-3 {
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+.hover-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.hover-scrollbar::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+.hover-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #d1d5db; /* gray-300 */
+  border-radius: 4px;
+}
+html.dark .hover-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4b5563; /* gray-600 */
+}
+.hover-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af; /* gray-400 */
+}
+html.dark .hover-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #6b7280; /* gray-500 */
+}

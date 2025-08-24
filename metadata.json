@@ -1,0 +1,5 @@
+{
+  "name": "Gemini AI Playground",
+  "description": "A playground to interact with Gemini models",
+  "requestFramePermissions": []
+}
